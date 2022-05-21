@@ -1,1 +1,1 @@
-# solution_Schr-dinger_equation-simple-
+# solution_Schrödinger_equation-simple-
