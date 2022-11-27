@@ -16,13 +16,15 @@ double Psi_solution(double x)
 
 int main()
 {
-    const int N = 2048;
     const int M = 10000;
-    const double Xmin = -15.;
-    const double Xmax = 15.;
     const double dt = 0.01;
-    const double dx = (Xmax - Xmin)/N;
-    const double dp = 2.0*M_PI/(dx*N);
+    const double dx = 0.1;
+    const double Xmin = -409.55; // -4*r_osc
+    const double Xmax = 409.55;  // 4*r_osc
+    const double N1 = (Xmax - Xmin)/dx;
+    const int N = pow(2,(int(log(N1)/log(2))+1));
+    const double dp = (2*M_PI)/(dx*N);
+
     std::vector<double> coordinate(N);
     fftw_complex *func_in = new fftw_complex[N];
     fftw_complex *func_out = new fftw_complex[N];
@@ -30,13 +32,23 @@ int main()
     plan_fwd = fftw_plan_dft_1d(N, func_in, func_out, FFTW_FORWARD, FFTW_MEASURE);
     plan_bwd = fftw_plan_dft_1d(N, func_out, func_in, FFTW_BACKWARD, FFTW_MEASURE);
 
-    double X = 0.0;
-    for (int i = 0; i < N; ++i)
+// теперь диапазон [Xmin;Xmax] другой, массив coordinate[] не содержит нуль
+    double X = dx/2;
+    for(int i = N/2; i < N; ++i)
     {
-        X = Xmin+dx*i;
         coordinate[i] = X;
         func_in[i][0] = exp(-X*X);
         func_in[i][1] = 0.;
+        X += dx;
+    }
+
+    X = -dx/2;
+    for(int i = N/2-1; i >= 0; --i)
+    {
+        coordinate[i] = X;
+        func_in[i][0] = exp(-X*X);
+        func_in[i][1] = 0.;
+        X -= dx;
     }
 
     double *p = new double[N];
@@ -61,6 +73,7 @@ int main()
         for (int j = 0; j < N; ++j)
         {
             func_out[j][0] = exp(-p[j]*p[j]*dt/2.)*func_out[j][0];
+            func_out[j][1] = exp(-p[j]*p[j]*dt/2.)*func_out[j][1];
         }
         fftw_execute(plan_bwd);
 
